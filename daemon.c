@@ -14,7 +14,7 @@
 #include <strings.h>
 
 static void dochild(const struct options* opts, int argc, char** argv);
-static void handle_sigchild();
+static int  isscript(const char* prog);
 
 void init_daemon(const struct options* opts, int argc, char** argv)
 {
@@ -33,7 +33,6 @@ void init_daemon(const struct options* opts, int argc, char** argv)
 		}
 	}
 
-	signal(SIGCHLD, handle_sigchild);
 	setsid();
 	opts->rootdir ? chdir(opts->rootdir) : chdir("/");
 
@@ -57,31 +56,69 @@ void init_daemon(const struct options* opts, int argc, char** argv)
 			pidfile_write(fd, getpid());
 			close(fd);
 		}
+
 		waitpid(childpid, &status, 0);
+
+		if (opts->child_pidfile)
+			unlink(opts->child_pidfile);
+		if (opts->super_pidfile)
+			unlink(opts->super_pidfile);
 	}
 	while (opts->restart);
 }
 
 static void dochild(const struct options* opts, int argc, char** argv) {
+/*
 	int    fd;
 	struct rlimit max_files;
 
 	bzero(&max_files, sizeof(max_files));
 	getrlimit(RLIMIT_NOFILE, &max_files);
 	for (fd = 0; fd < (int)max_files.rlim_max; ++fd) {
-//		close(fd);
+		close(fd);
 	}
-
+ */
 	umask(0);
+
+	if (isscript(argv[0])) {
+		int i;
+		const char* shell;
+		int new_argc;
+		char** new_argv;
+
+		shell = getenv("SHELL");
+		if (!shell)
+			shell = "/bin/sh";
+		if (access(shell, R_OK | X_OK) == -1) {
+			fprintf(stderr, "daemon: cannot find shell. shell=%s errno=%d error=%s\n", shell, errno, strerror(errno));
+			exit(1);
+		}
+
+		new_argc = 2 + argc;
+		new_argv = calloc(new_argc + 1, sizeof(char*));
+		new_argv[0] = strdup(shell);
+		new_argv[1] = strdup("-c");
+		for (i = 0; i < argc; ++i)
+			new_argv[2 + i] = argv[i];
+
+		execvp(new_argv[0], new_argv);
+	}
 
 	execvp(argv[0], argv);
 }
 
-static void handle_sigchild()
-{
-	pid_t pid;
-	int status;
+static int isscript(const char* prog) {
+	int fd;
+	int n;
+	int ok = 0;
+	char buf[2];
 	
-	while ((pid = wait3(&status, WNOHANG, (struct rusage *)NULL)) > 0)
-		 ;
+	fd = open(prog, O_RDONLY);
+	if (fd >= 0) {
+		n = read(fd, buf, 2);
+		ok = n == 2 && memcmp("#!", buf, 2) == 0;
+		close(fd);
+	}
+
+	return ok;
 }
