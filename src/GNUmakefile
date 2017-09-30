@@ -14,11 +14,14 @@ PROG     = daemon
 SRCS     = main.c options.c daemon.c utils.c
 OBJS     = $(SRCS:.c=.o)
 MAN      = daemon.8
+MAN_TARGET = $(MAN).gz
 
 DESTDIR ?= /usr/local
+CFLAGS  ?= -O2 -pipe
 CFLAGS  += -Wall -Wextra
+CFLAGS  += -std=gnu99 -Qunused-arguments -fstack-protector
 
-all: $(PROG) $(MAN)
+all: $(PROG) $(MAN_TARGET)
 
 install:
 	install -b -D $(DESTDIR) -s daemon /bin/daemon
@@ -33,5 +36,7 @@ clean:
 	-rm $(OBJS)
 
 $(PROG): $(OBJS)
-	gzip -cn $(MAN) > $(MAN).gz
 	$(CC) $(CFLAGS) $(TARGET_ARCH) -o $@ $^ $(LDFLAGS)
+
+$(MAN_TARGET):
+	gzip -cn $? > $@

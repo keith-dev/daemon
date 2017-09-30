@@ -1,8 +1,8 @@
-PROG_CXX = daemon
-SRCS     = main.c options.c daemon.c utils.c
+PROG    = daemon
+SRCS    = main.c options.c daemon.c utils.c
 
-NO_MAN   = noman
+NO_MAN  = noman
 
-CFLAGS   += -Wall -Wextra
+CFLAGS  += -Wall -Wextra
 
 .include <bsd.prog.mk>

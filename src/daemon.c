@@ -15,6 +15,9 @@
 
 static void dochild(const struct options* opts, int argc, char** argv);
 static int  isscript(const char* prog);
+static int  setopts(const struct options* opts);
+static int  pidfiles_create(const struct options* opts);
+static int  pidfiles_remove(const struct options* opts);
 
 void init_daemon(const struct options* opts, int argc, char** argv)
 {
@@ -22,19 +25,7 @@ void init_daemon(const struct options* opts, int argc, char** argv)
 	int    fd;
 	int    status;
 
-	if (opts->changeid) {
-		if (setuid(opts->uid >= 0 ? opts->uid : 0) == -1) {
-			fprintf(stderr, "daemon: error setuid=%d errno=%d error=%s\n", opts->uid >= 0 ? opts->uid : 0, errno, strerror(errno));
-			exit(1);
-		}
-		if (setgid(opts->gid >= 0 ? opts->gid : 0) == -1) {
-			fprintf(stderr, "daemon: error setuid=%d errno=%d error=%s\n", opts->gid >= 0 ? opts->gid : 0, errno, strerror(errno));
-			exit(1);
-		}
-	}
-
-	setsid();
-	opts->rootdir ? chdir(opts->rootdir) : chdir("/");
+	setopts(opts);
 
 	do {
 		fprintf(stderr, "daemon: spawning child=%s restart=%d\n", argv[0], opts->restart);
@@ -48,26 +39,15 @@ void init_daemon(const struct options* opts, int argc, char** argv)
 			dochild(opts, argc, argv);
 		}
 
-		if (pidfile_create(&fd, opts->child_pidfile)) {
-			pidfile_write(fd, childpid);
-			close(fd);
-		}
-		if (pidfile_create(&fd, opts->super_pidfile)) {
-			pidfile_write(fd, getpid());
-			close(fd);
-		}
-
+		pidfiles_create(opts);
 		waitpid(childpid, &status, 0);
-
-		if (opts->child_pidfile)
-			unlink(opts->child_pidfile);
-		if (opts->super_pidfile)
-			unlink(opts->super_pidfile);
+		pidfiles_remove(opts);
 	}
 	while (opts->restart);
 }
 
-static void dochild(const struct options* opts, int argc, char** argv) {
+static void dochild(const struct options* opts, int argc, char** argv)
+{
 /*
 	int    fd;
 	struct rlimit max_files;
@@ -107,7 +87,8 @@ static void dochild(const struct options* opts, int argc, char** argv) {
 	execvp(argv[0], argv);
 }
 
-static int isscript(const char* prog) {
+static int isscript(const char* prog)
+{
 	int fd;
 	int n;
 	int ok = 0;
@@ -121,4 +102,41 @@ static int isscript(const char* prog) {
 	}
 
 	return ok;
+}
+
+static int  setopts(const struct options* opts)
+{
+	if (opts->changeid) {
+		if (setuid(opts->uid >= 0 ? opts->uid : 0) == -1) {
+			fprintf(stderr, "daemon: error setuid=%d errno=%d error=%s\n", opts->uid >= 0 ? opts->uid : 0, errno, strerror(errno));
+			exit(1);
+		}
+		if (setgid(opts->gid >= 0 ? opts->gid : 0) == -1) {
+			fprintf(stderr, "daemon: error setuid=%d errno=%d error=%s\n", opts->gid >= 0 ? opts->gid : 0, errno, strerror(errno));
+			exit(1);
+		}
+	}
+
+	setsid();
+	opts->rootdir ? chdir(opts->rootdir) : chdir("/");
+}
+
+static int  pidfiles_create(const struct options* opts)
+{
+	if (pidfile_create(&fd, opts->child_pidfile)) {
+		pidfile_write(fd, childpid);
+		close(fd);
+	}
+	if (pidfile_create(&fd, opts->super_pidfile)) {
+		pidfile_write(fd, getpid());
+		close(fd);
+	}
+}
+
+static int  pidfiles_remove(const struct options* opts)
+{
+	if (opts->child_pidfile)
+		unlink(opts->child_pidfile);
+	if (opts->super_pidfile)
+		unlink(opts->super_pidfile);
 }
