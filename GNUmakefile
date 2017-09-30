@@ -16,6 +16,12 @@ SUBDIR = src
 
 all: $(SUBDIR)
 
+install:
+	for P in $(SUBDIR); do $(MAKE) --directory=$$P install; done
+
+uninstall:
+	for P in $(SUBDIR); do $(MAKE) --directory=$$P uninstall; done
+
 clean:
 	for P in $(SUBDIR); do $(MAKE) --directory=$$P clean; done
 

@@ -13,14 +13,25 @@
 PROG     = daemon
 SRCS     = main.c options.c daemon.c utils.c
 OBJS     = $(SRCS:.c=.o)
+MAN      = daemon.8
 
-CFLAGS   += -Wall -Wextra
+DESTDIR ?= /usr/local
+CFLAGS  += -Wall -Wextra
 
-all: $(PROG)
+all: $(PROG) $(MAN)
+
+install:
+	install -b -D $(DESTDIR) -s daemon /bin/daemon
+	install -b -D $(DESTDIR) -m 444 daemon.8.gz /share/man/man8
+
+uninstall:
+	rm $(DESTDIR)/bin/daemon
+	rm $(DESTDIR)/share/man/man8
 
 clean:
 	-rm $(PROG)
 	-rm $(OBJS)
 
 $(PROG): $(OBJS)
+	gzip -cn $(MAN) > $(MAN).gz
 	$(CC) $(CFLAGS) $(TARGET_ARCH) -o $@ $^ $(LDFLAGS)
