@@ -7,17 +7,20 @@
 #	duplicated in all such forms and that any documentation,
 #	advertising materials, and other materials related to such
 #	distribution and use acknowledge that the software was developed
-#	by Webbusy Ltd.
+#	by Keith Williams.
 # ---------------------------------------------------------------------------
 
-SUBDIR = src
+PROG     = daemon
+SRCS     = main.c options.c daemon.c utils.c
+OBJS     = $(SRCS:.c=.o)
 
-.PHONY: $(SUBDIR)
+CFLAGS   += -Wall -Wextra
 
-all: $(SUBDIR)
+all: $(PROG)
 
 clean:
-	for P in $(SUBDIR); do $(MAKE) --directory=$$P clean; done
+	-rm $(PROG)
+	-rm $(OBJS)
 
-$(SUBDIR):
-	$(MAKE) -C $@
+$(PROG): $(OBJS)
+	$(CC) $(CFLAGS) $(TARGET_ARCH) -o $@ $^ $(LDFLAGS)
