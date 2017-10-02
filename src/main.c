@@ -15,8 +15,7 @@ int main(int argc, char** argv)
 	cmd_argv = options_parse(&opts, argc, argv);
 	cmd_argc = argc - (cmd_argv - argv);
 
-	if (opts.help)
-	{
+	if (opts.help) {
 		usage();
 		exit(0);
 	}
@@ -35,7 +34,8 @@ void usage(void)
 		"",
 		"-h, --help show this text",
 		"",
-		"-c         Change the current working directory to the root (``/'').",
+//		"-c         Change the current working directory to the root (``/'').",
+		"-c         Change the current working directory.",
 		"",
 		"-f         Redirect standard input, standard output and standard error to",
 		"           /dev/null",

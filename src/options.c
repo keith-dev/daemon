@@ -33,7 +33,8 @@ char** options_parse(struct options* opts, int argc, char** argv)
 
 	for (i = 1; i < argc; ++i) {
 		if (argv[i][0] != '-') {
-			break;
+			fprintf(stderr, "unrecognized arg:%s\n", argv[i]);
+			exit(1);
 		}
 
 		switch (argv[i][1]) {
@@ -132,7 +133,7 @@ char** options_parse(struct options* opts, int argc, char** argv)
 
 		default:
 			fprintf(stderr, "unrecognized arg:%s\n", argv[i]);
-			exit(0);
+			exit(1);
 		}
 	}
 

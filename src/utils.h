@@ -1,6 +1,7 @@
 #ifndef DAEMON_UTILS_H
 #define DAEMON_UTILS_H
 
+#include <unistd.h>
 #include <sys/resource.h>
 
 int pidfile_create(int* fd, const char* name);
