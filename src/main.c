@@ -19,6 +19,9 @@ int main(int argc, char** argv)
 		usage();
 		exit(0);
 	}
+	if (cmd_argc == 0) {
+		exit(0);
+	}
 
 	init_daemon(&opts, cmd_argc, cmd_argv);
 	return 0;
@@ -36,6 +39,8 @@ void usage(void)
 		"",
 //		"-c         Change the current working directory to the root (``/'').",
 		"-c         Change the current working directory.",
+		"",
+		"-shell     Use this shell to run a script.",
 		"",
 		"-f         Redirect standard input, standard output and standard error to",
 		"           /dev/null",

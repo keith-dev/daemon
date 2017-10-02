@@ -20,9 +20,13 @@ void options_init(struct options* opts)
 		opts->changeid = 1;
 		opts->uid = opts->gid = -1;
 		opts->out = opts->err = -1;
+		opts->out_to_null = 0;
 		opts->help = 0;
+
+		opts->shell =
+		opts->child_pidfile =
+		opts->super_pidfile = NULL;
 		opts->rootdir = s_rootdir;
-		opts->child_pidfile = opts->super_pidfile = NULL;
 	}
 }
 
@@ -57,6 +61,10 @@ char** options_parse(struct options* opts, int argc, char** argv)
 
 		case 'r':
 			opts->restart = 1;
+			break;
+
+		case 'f':
+			opts->out_to_null = 1;
 			break;
 
 		case 'p': {
@@ -125,9 +133,12 @@ char** options_parse(struct options* opts, int argc, char** argv)
 			break;
 
 		case '-':
-			if (strcmp(&argv[i][2], "help")) {
+			if (strcmp(argv[i] + 2, "help") == 0) {
 				opts->help = 1;
 				return argv + i;
+			}
+			else if (strcmp(argv[i] + 2, "shell") == 0) {
+				opts->shell = argv[++i];
 			}
 			break;
 

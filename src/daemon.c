@@ -18,20 +18,16 @@
 
 static void dochild(const struct options* opts, int argc, char** argv);
 static int  isscript(const char* prog);
-static void setopts(const struct options* opts, int* use_daemon, int* nochdir, int* noclose);
+static void setopts(const struct options* opts, int* nochdir, int* noclose);
 static void pidfiles_create(const struct options* opts, pid_t childpid);
 static void pidfiles_remove(const struct options* opts);
 
 void init_daemon(const struct options* opts, int argc, char** argv)
 {
-	int     use_daemon;
 	int     nochdir;
 	int     noclose;
 
-	setopts(opts, &use_daemon, &nochdir, &noclose);
-	if (use_daemon) {
-		daemon(nochdir, noclose);
-	}
+	setopts(opts, &nochdir, &noclose);
 
 	do {
 		pid_t  childpid;
@@ -67,9 +63,16 @@ static void dochild(const struct options* opts, int argc, char** argv)
 		int     new_argc;
 		char**  new_argv;
 
-		shell = getenv("SHELL");
-		if (!shell)
+		if (opts->shell) {
+			shell = opts->shell;
+		}
+		else {
+			shell = getenv("SHELL");
+		}
+		if (!shell) {
 			shell = "/bin/sh";
+		}
+
 		if (access(shell, R_OK) == -1) {
 			fprintf(stderr, "daemon: cannot find shell. shell=%s errno=%d error=%s\n",
 				shell, errno, strerror(errno));
@@ -108,8 +111,18 @@ static int isscript(const char* prog)
 	return ok;
 }
 
-static void setopts(const struct options* opts, int* use_daemon, int* nochdir, int* noclose)
+static void setopts(const struct options* opts, int* nochdir, int* noclose)
 {
+	*nochdir = 1;
+	*noclose = 1;
+
+	if (opts->out_to_null) {
+		*noclose = 0;
+	}
+	daemon(*nochdir, *noclose);
+
+	opts->rootdir ? chdir(opts->rootdir) : chdir("/");
+
 	if (opts->changeid) {
 		if (setuid(opts->uid >= 0 ? opts->uid : 0) == -1) {
 			fprintf(stderr, "daemon: error setuid=%d errno=%d error=%s\n",
@@ -124,11 +137,6 @@ static void setopts(const struct options* opts, int* use_daemon, int* nochdir, i
 	}
 
 	setsid();
-	opts->rootdir ? chdir(opts->rootdir) : chdir("/");
-
-	*nochdir = 1;
-	*noclose = 1;
-	*use_daemon = 0;
 }
 
 static void pidfiles_create(const struct options* opts, pid_t childpid)

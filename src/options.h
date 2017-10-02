@@ -10,6 +10,8 @@ struct options
 	int out;
 	int err;
 	int help;
+	int out_to_null;
+	const char* shell;
 	const char* rootdir;
 	const char* child_pidfile;
 	const char* super_pidfile;
