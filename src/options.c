@@ -11,22 +11,27 @@
 
 /*-------------------------------------------------------------------------*/
 static const char* s_rootdir = "/";
+static const char* s_shell = "/bin/sh";
 
 /*-------------------------------------------------------------------------*/
 void options_init(struct options* opts)
 {
 	if (opts) {
-		opts->restart = 0;
-		opts->changeid = 1;
+		opts->restart = 0;			/* restart command on stop */
+
+		opts->changeid = 1;			/* impersonal another account */
 		opts->uid = opts->gid = -1;
 		opts->out = opts->err = -1;
+
 		opts->out_to_null = 0;
 		opts->help = 0;
 
-		opts->shell =
-		opts->child_pidfile =
+		opts->rootdir = s_rootdir;	/* run from this location */
+		opts->shell = s_shell;		/* use this shell to run scripts */
+		opts->child_pidfile =		/* pidfiles */
 		opts->super_pidfile = NULL;
-		opts->rootdir = s_rootdir;
+
+		opts->syslog_enabled = 0;	/* syslog stuff */
 	}
 }
 
@@ -37,15 +42,11 @@ char** options_parse(struct options* opts, int argc, char** argv)
 
 	for (i = 1; i < argc; ++i) {
 		if (argv[i][0] != '-') {
-			fprintf(stderr, "unrecognized arg:%s\n", argv[i]);
-			exit(1);
+			/* encountered the command */
+			return argv + i;
 		}
 
 		switch (argv[i][1]) {
-		case 'h':
-			opts->help = 1;
-			return argv + i;
-
 		case 'c': {
 				if ((i + 1) >= argc) {
 					fprintf(stderr, "daemon: missing root directory\n");
@@ -59,13 +60,23 @@ char** options_parse(struct options* opts, int argc, char** argv)
 			}
 			break;
 
-		case 'r':
-			opts->restart = 1;
-			break;
-
 		case 'f':
 			opts->out_to_null = 1;
 			break;
+
+		case 'S':
+		case 'o':
+		case 'm':
+		case 's':
+		case 'l':
+		case 'T':
+			opts->syslog_enabled = 1;
+			fprintf(stderr, "daemon: -%c not implemented\n", argv[i][1]);
+			exit(1);
+
+		case 'h':
+			opts->help = 1;
+			return argv + i;
 
 		case 'p': {
 				if ((i + 1) >= argc) {
@@ -81,7 +92,6 @@ char** options_parse(struct options* opts, int argc, char** argv)
 				close(fd);
 				if (unlink(opts->child_pidfile) == -1) {
 					fprintf(stderr, "daemon: cannot remove child pidfile: \"%s\"\n", opts->super_pidfile);
-//					exit(1);
 				}
 			}
 			break;
@@ -100,9 +110,12 @@ char** options_parse(struct options* opts, int argc, char** argv)
 				close(fd);
 				if (unlink(opts->super_pidfile) == -1) {
 					fprintf(stderr, "daemon: cannot remove supervisor pidfile: \"%s\"\n", opts->super_pidfile);
-//					exit(1);
 				}
 			}
+			break;
+
+		case 'r':
+			opts->restart = 1;
 			break;
 
 		case 'u': {

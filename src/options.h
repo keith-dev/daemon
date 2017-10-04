@@ -11,6 +11,7 @@ struct options
 	int err;
 	int help;
 	int out_to_null;
+	int syslog_enabled;
 	const char* shell;
 	const char* rootdir;
 	const char* child_pidfile;

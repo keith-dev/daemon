@@ -24,9 +24,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\" $FreeBSD$
+.\" $FreeBSD: releng/11.0/usr.sbin/daemon/daemon.8 296321 2016-03-02 19:10:39Z cem $
 .\"
-.Dd September 13, 2013
+.Dd October 2, 2017
 .Dt DAEMON 8
 .Os
 .Sh NAME
@@ -37,7 +37,9 @@
 .Op Fl cfr
 .Op Fl p Ar child_pidfile
 .Op Fl P Ar supervisor_pidfile
+.Op Fl t Ar title
 .Op Fl u Ar user
+.Op Fl h Ar shell
 .Ar command arguments ...
 .Sh DESCRIPTION
 The
@@ -48,14 +50,29 @@ Privileges may be lowered to the specified user.
 .Pp
 The options are as follows:
 .Bl -tag -width indent
-.It Fl shell
-Use this shell to run scripts.
 .It Fl c
 Change the current working directory to the root
 .Pq Dq Pa / .
 .It Fl f
 Redirect standard input, standard output and standard error to
 .Pa /dev/null .
+.It Fl S
+Enable syslog output. This is implicitly applied if other syslog
+parameters are provided. The default values are daemon, notice,
+and daemon	for facility, priority,	and tag, respectively.
+.It Fl o Ar output_file
+Append output from	the daemonized process to
+.Ar output_file.
+If the
+file does not exist, it is created with permissions 0600.
+.It Fl m Ar output_mask
+Redirect output from the child process
+.Xr stdout (1),
+.Xr stderr (2),
+or
+.Xr both (3).
+This value specifies what is sent to syslog and the
+log file. The default is 3.
 .It Fl p Ar child_pidfile
 Write the ID of the created process into the
 .Ar child_pidfile
@@ -96,27 +113,51 @@ regardless of whether the
 option is used or not.
 .It Fl r
 Supervise and restart the program if it has been terminated.
+.It Fl t Ar title
+Process title for the daemon to make it easily identifiable.
 .It Fl u Ar user
 Login name of the user to execute the program under.
 Requires adequate superuser privileges.
+.It Fl s Ar syslog_priority
+These priorities are accepted: emerg, alert, crit, err, warning,
+notice, info, and debug.  The default is info.
+.It Fl l Ar syslog_facility
+These facilities are accepted: auth, authpriv, console, cron,
+daemon, ftp, kern, lpr, mail, news, ntp, security, syslog, user,
+uucp, and local0, ..., local7.  The default is daemon.
+.It Fl T Ar syslog_tag
+Set the tag which is appended to all syslog messages.  The
+default is daemon.
+.It Fl -shell Ar shell
+Use this shell to run scripts.
 .El
 .Pp
-If the
+If any of the options
 .Fl p ,
-.Fl P
+.Fl P ,
+.Fl r ,
+.Fl o ,
+.Fl s ,
+.Fl T ,
+.Fl m ,
+.Fl S ,
 or
-.Fl r
-option is specified the program is executed in a spawned child process.
-The
+.Fl l
+are specified, the program is executed in a spawned child process. The
 .Nm
 waits until it terminates to keep the pid file(s) locked and removes them
-after the process exits or restarts the program.
-In this case if the monitoring
+after the process exits or restarts the program.  In this case if the
+monitoring
 .Nm
-receives software termination signal (SIGTERM) it forwards it to the
-spawned process.
-Normally it will cause the child to exit, remove the pidfile(s)
-and then terminate.
+receives software termination signal (SIGTERM) it for-
+wards it to the spawned process.  Normally it will cause the child to
+exit, remove the pidfile(s) and then terminate.
+.Pp
+If neither file or syslog output are selected, all output is redirected
+to the daemon process and written to stdout.  The
+.Fl f
+option may be used
+to suppress the stdout output completely.
 .Pp
 The
 .Fl P
@@ -125,7 +166,8 @@ option is useful combined with the
 option as
 .Ar supervisor_pidfile
 contains the ID of the supervisor
-not the child. This is especially important if you use
+not the child.
+This is especially important if you use
 .Fl r
 in an rc script as the
 .Fl p
@@ -164,4 +206,4 @@ The
 utility first appeared in
 .Fx 4.7 .
 .Sh AUTHOR
-Rewrite by Keith Williams, 2017.
+Rewrite for other systems by Keith Williams, 2017.
